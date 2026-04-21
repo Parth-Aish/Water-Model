@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💧 Water Quality Prediction API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .models-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .model-card {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .model-card:hover {
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            border-color: #764ba2;
+        }
+
+        .model-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .input-row-full {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+
+        .result.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.95em;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .result-value {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.05em;
+        }
+
+        .result.error .result-value {
+            color: #ef4444;
+        }
+
+        .result.success .result-value {
+            color: #22c55e;
+        }
+
+        .safety-safe {
+            background: #22c55e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .safety-unsafe {
+            background: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 1.5s infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.7);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .api-status {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            color: #166534;
+        }
+
+        .api-status.offline {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: blink 2s infinite;
+        }
+
+        .api-status.offline .status-dot {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .feature-info {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #78350f;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .models-container {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .input-row,
+            .input-row-full {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💧 Water Quality Prediction API</h1>
+            <p>Test your water samples with AI-powered predictions</p>
+        </header>
+
+        <div class="api-status" id="apiStatus">
+            <div class="status-dot"></div>
+            <span>Checking API connection...</span>
+        </div>
+
+        <div class="models-container">
+            <!-- 9-SENSOR MODEL -->
+            <div class="model-card">
+                <h2>
+                    🔬 Full Model
+                    <span class="badge">9 Sensors</span>
+                </h2>
+                
+                <div class="feature-info">
+                    📝 Enter all 9 chemical parameters
+                </div>
+
+                <form id="form9">
+                    <div class="input-row-full">
+                        <div class="input-group">
+                            <label for="ph9">pH</label>
+                            <input type="number" id="ph9" step="0.1" min="0" max="14" value="7.5" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="ec9">EC (µS/cm)</label>
+                            <input type="number" id="ec9" step="1" min="0" max="5000" value="1200" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="hardness9">Total Hardness</label>
+                            <input type="number" id="hardness9" step="1" min="0" max="2000" value="350" required>
+                        </div>
+                    </div>
+
+                    <div class="input-row-full">
+                        <div class="input-group">
+                            <label for="ca9">Ca (mg/L)</label>
+                            <input type="number" id="ca9" step="1" min="0" max="500" value="70" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="mg9">Mg (mg/L)</label>
+                            <input type="number" id="mg9" step="1" min="0" max="500" value="50" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="cl9">Cl (mg/L)</label>
+                            <input type="number" id="cl9" step="1" min="0" max="1000" value="150" required>
+                        </div>
+                    </div>
+
+                    <div class="input-row-full">
+                        <div class="input-group">
+                            <label for="so49">SO4 (mg/L)</label>
+                            <input type="number" id="so49" step="1" min="0" max="500" value="70" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="no39">NO3 (mg/L)</label>
+                            <input type="number" id="no39" step="1" min="0" max="500" value="40" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="f9">F (mg/L)</label>
+                            <input type="number" id="f9" step="0.1" min="0" max="10" value="0.8" required>
+                        </div>
+                    </div>
+
+                    <button type="submit">🚀 Predict (9 Sensors)</button>
+                </form>
+
+                <div class="result" id="result9"></div>
+            </div>
+
+            <!-- 3-SENSOR MODEL -->
+            <div class="model-card">
+                <h2>
+                    ⚡ Minimal Model
+                    <span class="badge">3 Sensors</span>
+                </h2>
+
+                <div class="feature-info">
+                    📝 Enter only 3 key parameters (Cost-efficient IoT)
+                </div>
+
+                <form id="form3">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="ph3">pH</label>
+                            <input type="number" id="ph3" step="0.1" min="0" max="14" value="7.5" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="ec3">EC (µS/cm)</label>
+                            <input type="number" id="ec3" step="1" min="0" max="5000" value="1200" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="no33">NO3 (mg/L)</label>
+                        <input type="number" id="no33" step="1" min="0" max="500" value="40" required>
+                    </div>
+
+                    <button type="submit">⚡ Predict (3 Sensors)</button>
+                </form>
+
+                <div class="result" id="result3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+        const statusDiv = document.getElementById('apiStatus');
+
+        // Define validation constraints for each input
+        const constraints = {
+            ph9: { min: 0, max: 14, name: 'pH' },
+            ec9: { min: 0, max: 5000, name: 'EC (µS/cm)' },
+            hardness9: { min: 0, max: 2000, name: 'Total Hardness' },
+            ca9: { min: 0, max: 500, name: 'Ca (mg/L)' },
+            mg9: { min: 0, max: 500, name: 'Mg (mg/L)' },
+            cl9: { min: 0, max: 1000, name: 'Cl (mg/L)' },
+            so49: { min: 0, max: 500, name: 'SO4 (mg/L)' },
+            no39: { min: 0, max: 500, name: 'NO3 (mg/L)' },
+            f9: { min: 0, max: 10, name: 'F (mg/L)' },
+            ph3: { min: 0, max: 14, name: 'pH' },
+            ec3: { min: 0, max: 5000, name: 'EC (µS/cm)' },
+            no33: { min: 0, max: 500, name: 'NO3 (mg/L)' }
+        };
+
+        // Validate input value
+        function validateInput(inputId) {
+            const input = document.getElementById(inputId);
+            const value = parseFloat(input.value);
+            const constraint = constraints[inputId];
+
+            if (isNaN(value)) {
+                input.style.borderColor = '#ef4444';
+                return false;
+            }
+
+            if (value < constraint.min || value > constraint.max) {
+                input.style.borderColor = '#f59e0b';
+                console.warn(`Warning: ${constraint.name} is out of recommended range (${constraint.min}-${constraint.max})`);
+            } else {
+                input.style.borderColor = '#e0e0e0';
+            }
+            return !isNaN(value);
+        }
+
+        // Validate all inputs in a form
+        function validateForm(formId) {
+            const form = document.getElementById(formId);
+            const inputs = form.querySelectorAll('input[type="number"]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (!validateInput(input.id)) {
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // Add real-time validation listeners
+        Object.keys(constraints).forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('change', () => validateInput(inputId));
+                input.addEventListener('blur', () => validateInput(inputId));
+            }
+        });
+
+        // Check API status on load
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    statusDiv.classList.remove('offline');
+                    statusDiv.innerHTML = '<div class="status-dot"></div><span>✅ API is online and ready!</span>';
+                } else {
+                    setOfflineStatus();
+                }
+            } catch (error) {
+                setOfflineStatus();
+            }
+        }
+
+        function setOfflineStatus() {
+            statusDiv.classList.add('offline');
+            statusDiv.innerHTML = '<div class="status-dot"></div><span>❌ API is offline. Start the server first!</span>';
+        }
+
+        // 9-Sensor Model Handler
+        document.getElementById('form9').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate all inputs
+            if (!validateForm('form9')) {
+                alert('❌ Please check your input values. Some values may be out of range.');
+                return;
+            }
+
+            const features = [
+                parseFloat(document.getElementById('ph9').value),
+                parseFloat(document.getElementById('ec9').value),
+                parseFloat(document.getElementById('hardness9').value),
+                parseFloat(document.getElementById('ca9').value),
+                parseFloat(document.getElementById('mg9').value),
+                parseFloat(document.getElementById('cl9').value),
+                parseFloat(document.getElementById('so49').value),
+                parseFloat(document.getElementById('no39').value),
+                parseFloat(document.getElementById('f9').value)
+            ];
+
+            await sendPrediction('full', features, 'result9', document.querySelector('#form9 button'));
+        });
+
+        // 3-Sensor Model Handler
+        document.getElementById('form3').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate all inputs
+            if (!validateForm('form3')) {
+                alert('❌ Please check your input values. Some values may be out of range.');
+                return;
+            }
+
+            const features = [
+                parseFloat(document.getElementById('ph3').value),
+                parseFloat(document.getElementById('ec3').value),
+                parseFloat(document.getElementById('no33').value)
+            ];
+
+            await sendPrediction('minimal', features, 'result3', document.querySelector('#form3 button'));
+        });
+
+        // Send prediction request
+        async function sendPrediction(model, features, resultId, button) {
+            const resultDiv = document.getElementById(resultId);
+            button.disabled = true;
+            const originalText = button.innerHTML;
+            button.innerHTML = '⏳ Processing...<span class="loading"></span>';
+
+            try {
+                const response = await fetch(`${API_URL}/predict/${model}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ features })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    displayResult(resultDiv, data, true);
+                } else {
+                    displayResult(resultDiv, data, false);
+                }
+            } catch (error) {
+                displayResult(resultDiv, { message: '🔌 Connection error: ' + error.message }, false);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        // Display result with quality indicators
+        function displayResult(resultDiv, data, success) {
+            resultDiv.classList.add('show');
+            resultDiv.classList.toggle('success', success);
+            resultDiv.classList.toggle('error', !success);
+
+            if (success) {
+                const safetyClass = data.safety === 'Safe' ? 'safety-safe' : 'safety-unsafe';
+                const safetyBadge = `<span class="${safetyClass}">${data.safety}</span>`;
+                
+                // Color-code the prediction
+                let predictionEmoji = '❓';
+                if (data.prediction === 'Excellent') predictionEmoji = '✅';
+                else if (data.prediction === 'Good') predictionEmoji = '👍';
+                else if (data.prediction === 'Poor') predictionEmoji = '⚠️';
+                else if (data.prediction === 'Very Poor') predictionEmoji = '🚫';
+
+                resultDiv.innerHTML = `
+                    <div class="result-title">✅ Prediction Result</div>
+                    <div class="result-item">
+                        <span class="result-label">Model:</span>
+                        <span class="result-value">${data.model}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Water Quality:</span>
+                        <span class="result-value">${predictionEmoji} ${data.prediction}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Confidence:</span>
+                        <span class="result-value">${data.confidence}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Safety Status:</span>
+                        <span class="result-value">${safetyBadge}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Research ID:</span>
+                        <span class="result-value">${data.uid}</span>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result-title">❌ Error</div>
+                    <div class="result-item">
+                        <span class="result-label">Status:</span>
+                        <span class="result-value">${data.status || 'error'}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Message:</span>
+                        <span class="result-value">${data.message || 'Unknown error occurred'}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Check API status when page loads
+        window.addEventListener('load', checkAPIStatus);
+        
+        // Check API status every 5 seconds
+        setInterval(checkAPIStatus, 5000);
+    </script>
+</body>
+</html>
